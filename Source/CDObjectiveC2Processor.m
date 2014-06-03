@@ -245,11 +245,22 @@
     
     struct cd_objc2_class objc2Class;
     struct cd_objc2_class_ro_t objc2ClassData;
-    [self readClassAtAddress:address objc2Class:&objc2Class objc2ClassData:&objc2ClassData];
+    BOOL isSwiftClass = [self readClassAtAddress:address objc2Class:&objc2Class objc2ClassData:&objc2ClassData];
     
-    NSString *str = [self.machOFile stringAtAddress:objc2ClassData.name];
+    NSString *className = [self.machOFile stringAtAddress:objc2ClassData.name];
+    if (isSwiftClass && className.length > 4) {
+        NSScanner *scanner = [NSScanner scannerWithString:[className substringFromIndex:4]];
+        NSInteger length;
+        NSString *moduleName; // TODO: (2014-06-03) Do something with the module name?
+        [scanner scanInteger:&length];
+        [scanner scanUpToCharactersFromSet:[NSCharacterSet decimalDigitCharacterSet] intoString:&moduleName];
+        NSParameterAssert(moduleName.length == length);
+        [scanner scanInteger:&length];
+        [scanner scanUpToCharactersFromSet:[NSCharacterSet new] intoString:&className];
+        NSParameterAssert(className.length == length);
+    }
     
-    CDOCClass *aClass = [[CDOCClass alloc] initWithName:str];
+    CDOCClass *aClass = [[CDOCClass alloc] initWithName:className];
     
     for (CDOCMethod *method in [self loadMethodsAtAddress:objc2ClassData.baseMethods])
         [aClass addInstanceMethod:method];
@@ -257,7 +268,7 @@
     aClass.instanceVariables = [self loadIvarsAtAddress:objc2ClassData.ivars];
     
     {
-        CDSymbol *classSymbol = [[self.machOFile symbolTable] symbolForClassName:str];
+        CDSymbol *classSymbol = [[self.machOFile symbolTable] symbolForClassName:className];
         
         if (classSymbol != nil)
             aClass.isExported = [classSymbol isExternal];

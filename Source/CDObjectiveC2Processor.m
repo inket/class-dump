@@ -66,9 +66,6 @@
     
     CDOCProtocol *protocol = [self.protocolUniquer protocolWithAddress:address];
     if (protocol == nil) {
-        protocol = [[CDOCProtocol alloc] init];
-        [self.protocolUniquer setProtocol:protocol withAddress:address];
-        
         CDMachOFileDataCursor *cursor = [[CDMachOFileDataCursor alloc] initWithFile:self.machOFile address:address];
         NSParameterAssert([cursor offset] != 0);
         
@@ -96,7 +93,8 @@
         }
         
         NSString *str = [self.machOFile stringAtAddress:objc2Protocol.name];
-        [protocol setName:str];
+        protocol = [[CDOCProtocol alloc] initWithName:str];
+        [self.protocolUniquer setProtocol:protocol withAddress:address];
         
         if (objc2Protocol.protocols != 0) {
             [cursor setAddress:objc2Protocol.protocols];
@@ -149,9 +147,8 @@
     objc2Category.v7                 = [cursor readPtr];
     objc2Category.v8                 = [cursor readPtr];
     
-    CDOCCategory *category = [[CDOCCategory alloc] init];
     NSString *str = [self.machOFile stringAtAddress:objc2Category.name];
-    [category setName:str];
+    CDOCCategory *category = [[CDOCCategory alloc] initWithName:str];
     
     for (CDOCMethod *method in [self loadMethodsAtAddress:objc2Category.instanceMethods])
         [category addInstanceMethod:method];
@@ -234,8 +231,7 @@
     
     NSString *str = [self.machOFile stringAtAddress:objc2ClassData.name];
     
-    CDOCClass *aClass = [[CDOCClass alloc] init];
-    [aClass setName:str];
+    CDOCClass *aClass = [[CDOCClass alloc] initWithName:str];
     
     for (CDOCMethod *method in [self loadMethodsAtAddress:objc2ClassData.baseMethods])
         [aClass addInstanceMethod:method];

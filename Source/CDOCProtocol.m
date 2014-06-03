@@ -35,8 +35,13 @@
 
 - (id)init;
 {
+    return [self initWithName:nil];
+}
+
+- (id)initWithName:(NSString *)name;
+{
     if ((self = [super init])) {
-        _name = nil;
+        _name = name;
         _protocols               = [[NSMutableArray alloc] init];
         _classMethods            = [[NSMutableArray alloc] init];
         _instanceMethods         = [[NSMutableArray alloc] init];

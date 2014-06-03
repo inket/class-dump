@@ -245,8 +245,7 @@ static BOOL debug = NO;
         return nil;
     }
 
-    CDOCClass *aClass = [[CDOCClass alloc] init];
-    aClass.name           = className;
+    CDOCClass *aClass = [[CDOCClass alloc] initWithName:className];
     
     // TODO: can we extract more than just the string from here?
     aClass.superClassRef  = [[CDOCClassReference alloc] initWithClassName:[self.machOFile stringAtAddress:objcClass.super_class]];
@@ -408,8 +407,7 @@ static BOOL debug = NO;
             return nil;
         }
 
-        category = [[CDOCCategory alloc] init];
-        category.name = name;
+        category = [[CDOCCategory alloc] initWithName:name];
         
         // TODO: can we extract more than just the string from here?
         category.classRef = [[CDOCClassReference alloc] initWithClassName:[self.machOFile stringAtAddress:objcCategory.class_name]];
@@ -431,9 +429,6 @@ static BOOL debug = NO;
 {
     CDOCProtocol *protocol = [self.protocolUniquer protocolWithAddress:address];
     if (protocol == nil) {
-        protocol = [[CDOCProtocol alloc] init];
-        [self.protocolUniquer setProtocol:protocol withAddress:address];
-
         CDMachOFileDataCursor *cursor = [[CDMachOFileDataCursor alloc] initWithFile:self.machOFile address:address];
 
         /*uint32_t v1 =*/ [cursor readInt32];
@@ -442,7 +437,8 @@ static BOOL debug = NO;
         uint32_t v4 = [cursor readInt32];
         uint32_t v5 = [cursor readInt32];
         NSString *name = [self.machOFile stringAtAddress:v2];
-        protocol.name = name; // Need to set name before adding to another protocol
+        protocol = [[CDOCProtocol alloc] initWithName:name];
+        [self.protocolUniquer setProtocol:protocol withAddress:address];
 
         {
             // Protocols

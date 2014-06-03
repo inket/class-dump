@@ -9,7 +9,9 @@
 
 @interface CDOCProtocol : NSObject
 
-@property (strong) NSString *name;
+- (id)initWithName:(NSString *)name;
+
+@property (readonly) NSString *name;
 
 @property (readonly) NSArray *protocols;
 - (void)addProtocol:(CDOCProtocol *)protocol;

@@ -53,8 +53,7 @@
         CDOCProtocol *p1 = _protocolsByAddress[key];
         CDOCProtocol *uniqueProtocol = _uniqueProtocolsByName[p1.name];
         if (uniqueProtocol == nil) {
-            uniqueProtocol = [[CDOCProtocol alloc] init];
-            [uniqueProtocol setName:[p1 name]];
+            uniqueProtocol = [[CDOCProtocol alloc] initWithName:p1.name];
             _uniqueProtocolsByName[uniqueProtocol.name] = uniqueProtocol;
             // adopted protocols still not set, will want uniqued instances
         } else {

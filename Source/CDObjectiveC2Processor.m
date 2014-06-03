@@ -187,15 +187,8 @@
     return category;
 }
 
-- (CDOCClass *)loadClassAtAddress:(uint64_t)address;
+- (void)readClassAtAddress:(uint64_t)address objc2Class:(struct cd_objc2_class *)objc2ClassPtr objc2ClassData:(struct cd_objc2_class_ro_t *)objc2ClassDataPtr;
 {
-    if (address == 0)
-        return nil;
-    
-    CDOCClass *class = [self classWithAddress:address];
-    if (class)
-        return class;
-    
     CDMachOFileDataCursor *cursor = [[CDMachOFileDataCursor alloc] initWithFile:self.machOFile address:address];
     NSParameterAssert([cursor offset] != 0);
     
@@ -211,7 +204,7 @@
     
     NSParameterAssert(objc2Class.data != 0);
     [cursor setAddress:objc2Class.data];
-
+    
     struct cd_objc2_class_ro_t objc2ClassData;
     objc2ClassData.flags         = [cursor readInt32];
     objc2ClassData.instanceStart = [cursor readInt32];
@@ -228,6 +221,26 @@
     objc2ClassData.ivars          = [cursor readPtr];
     objc2ClassData.weakIvarLayout = [cursor readPtr];
     objc2ClassData.baseProperties = [cursor readPtr];
+    
+    if (objc2ClassPtr)
+        memcpy(objc2ClassPtr, &objc2Class, sizeof(objc2Class));
+    
+    if (objc2ClassDataPtr)
+        memcpy(objc2ClassDataPtr, &objc2ClassData, sizeof(objc2ClassData));
+}
+
+- (CDOCClass *)loadClassAtAddress:(uint64_t)address;
+{
+    if (address == 0)
+        return nil;
+    
+    CDOCClass *class = [self classWithAddress:address];
+    if (class)
+        return class;
+    
+    struct cd_objc2_class objc2Class;
+    struct cd_objc2_class_ro_t objc2ClassData;
+    [self readClassAtAddress:address objc2Class:&objc2Class objc2ClassData:&objc2ClassData];
     
     NSString *str = [self.machOFile stringAtAddress:objc2ClassData.name];
     
@@ -315,38 +328,8 @@
     if (address == 0)
         return nil;
     
-    CDMachOFileDataCursor *cursor = [[CDMachOFileDataCursor alloc] initWithFile:self.machOFile address:address];
-    NSParameterAssert([cursor offset] != 0);
-    
-    struct cd_objc2_class objc2Class;
-    objc2Class.isa        = [cursor readPtr];
-    objc2Class.superclass = [cursor readPtr];
-    objc2Class.cache      = [cursor readPtr];
-    objc2Class.vtable     = [cursor readPtr];
-    objc2Class.data       = [cursor readPtr];
-    objc2Class.reserved1  = [cursor readPtr];
-    objc2Class.reserved2  = [cursor readPtr];
-    objc2Class.reserved3  = [cursor readPtr];
-    
-    NSParameterAssert(objc2Class.data != 0);
-    [cursor setAddress:objc2Class.data];
-
     struct cd_objc2_class_ro_t objc2ClassData;
-    objc2ClassData.flags         = [cursor readInt32];
-    objc2ClassData.instanceStart = [cursor readInt32];
-    objc2ClassData.instanceSize  = [cursor readInt32];
-    if ([self.machOFile uses64BitABI])
-        objc2ClassData.reserved  = [cursor readInt32];
-    else
-        objc2ClassData.reserved = 0;
-    
-    objc2ClassData.ivarLayout     = [cursor readPtr];
-    objc2ClassData.name           = [cursor readPtr];
-    objc2ClassData.baseMethods    = [cursor readPtr];
-    objc2ClassData.baseProtocols  = [cursor readPtr];
-    objc2ClassData.ivars          = [cursor readPtr];
-    objc2ClassData.weakIvarLayout = [cursor readPtr];
-    objc2ClassData.baseProperties = [cursor readPtr];
+    [self readClassAtAddress:address objc2Class:NULL objc2ClassData:&objc2ClassData];
     
     return [self loadMethodsAtAddress:objc2ClassData.baseMethods];
 }
